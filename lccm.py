@@ -16,6 +16,7 @@ import numpy as np
 import pylogit
 from scipy.sparse import coo_matrix
 from scipy.optimize import minimize
+import scipy.stats
 from datetime import datetime
 import warnings
 
@@ -484,48 +485,106 @@ def calStdErrWtLogitPanel(param, expVars, altAv, weightsProb, weightsGr, altChos
     se = np.sqrt(np.diagonal(iHess))            # se is nExpVars x 1
 
     return se
-    
-    
-                
-# Method that takes as input the results object from the optimizer, and the list
-# of variable names, and displays the table of estimation results 
 
-def displayOutput(outputFile, startTime, llEstimation, nIndMods, 
-        namesExpVarsIndMod, paramIndMod, stdErrIndMod,
-        namesExpVarsMan, param, stdErr): 
-            
-    # Display screen
+
+def displayOutput(outputFile, startTime, llEstimation,llNull, nClasses, 
+        namesExpVarsClassMem, paramClassMem, stdErrClassMem,
+        namesExpVarsClassSpec, paramClassSpec, stdErrClassSpec, obsID): 
+    """
+    Function that displays the estimation results and model's stastical fit results. 
     
-    for s in range(0, nIndMods):
+    Parameters
+    ----------
+    outputFile : File.
+        A file object to which the output on the display screen is concurrently written.
+    startTime : Datetime.
+        A datetime object to indicate the starting time for estimation of the algorithm.
+    llEstiamtion : a scalar.
+        Log-likelihood value for the weighted multinomidal logit model at convergence.
+    llNull : a scalar.
+        Log-likelihood value for the weighted multinomidal logit model when all 
+        parameters are set to zero.
+    nClasses : Integer.
+        Number of classes to be estimated by the model.
+    namesExpVarsClassMem : List of size nExpVars.
+        The jth element is a string containing the name of the jth explanatory variable 
+        entering the class-membership model.
+    paramClassMem : 1D numpy array of size nVars x ( nClasses - 1 ).
+        Entails parameters of the class memebrship model, excluding those of the first class.
+        It treats the first class as the base class and hence no parameters are estimated
+        for this class.
+    stdErrClassMem : 1D numpy array of size nVars x (nClasses - 1 ).
+        Entails the standard errors for parameters of the class membership model, excluding 
+        those of the first class as it is the base class.
+     namesExpVarsClassSpec : List of size nClasses.
+        The jth element is a list containing the names of the explanatory variables
+        entering the class-specific utilities for the jth latent class.
+    paramClassSpec : List of size nClasses.
+        The jth element is a 1D numpy array containing the parameter estimates associated with 
+        the explanatory variables entering the class-specific utilities for the jth latent class.
+    stdErrClassSpec : List of size nClasses.
+        The jth element is a 1D numpy array containing standard errors for parameters of the class
+        specific choice model for the jth class.
+    obsID : 1D numpy array of size nRows.
+        Identifies which rows in the dataset correspond to which observation. 
+
+    Returns
+    -------
+    """
+    
+    num_class_specific_model = 0
+    for i in range(0, nClasses):
+        num_class_specific_model = num_class_specific_model + paramClassSpec[i].shape[0]
+    num_parameters_total = num_class_specific_model + paramClassMem.shape[0]
+    
+    rho_squared = 1 - llEstimation/llNull
+    rho_bar_squared = 1 - (llEstimation-num_parameters_total)/llNull
+    AIC = -2*llEstimation + 2*num_parameters_total
+    BIC = -2*llEstimation  + num_parameters_total*np.log(np.unique(obsID).shape[0])
+    timeElapsed = datetime.now() - startTime
+    timeElapsed = (timeElapsed.days * 24.0 * 60.0) + (timeElapsed.seconds/60.0)
+    
+    print ("\n")
+    print ("Number of Parameters:".ljust(45,' ')), (str(num_parameters_total).rjust(10,' '))  
+    print ("Number of Observations:".ljust(45, ' ')),(str(np.unique(obsID).shape[0]).rjust(10,' '))   
+    print ("Null Log-Likelihood:".ljust(45, ' ')),(str(round(llNull,2)).rjust(10,' '))   
+    print ("Fitted Log-Likelihood:".ljust(45, ' ')),(str(round(llEstimation,2)).rjust(10,' '))   
+    print ("Rho-Squared:".ljust(45, ' ')),(str(round(rho_squared,2)).rjust(10,' ')) 
+    print ("Rho-Bar-Squared:".ljust(45, ' ')),(str(round(rho_bar_squared,2)).rjust(10,' ')) 
+    print ("AIC:".ljust(45, ' ')),(str(round(AIC,2)).rjust(10,' ')) 
+    print ("BIC:".ljust(45, ' ')),(str(round(BIC)).rjust(10,' ')) 
+    print ("Estimation time (minutes):".ljust(45, ' ')),(str(round(timeElapsed,2)).rjust(10,' ')) 
+    print ("\n")
+    
+    # Display screen
+
+    for s in range(0, nClasses):
         print
         print 'Class %d Model: ' %(s + 1)
-        print '------------------------------------------------------------------------------'
-        print 'Parameter                                            Est         SE     t-stat'
-        print '------------------------------------------------------------------------------'
-        for k in range(0, len(namesExpVarsMan[s])):
-            print '%-45s %10.4f %10.4f %10.4f' %(namesExpVarsMan[s][k], param[s][k], 
-                    stdErr[s][k], param[s][k]/stdErr[s][k])
-        print '------------------------------------------------------------------------------'
+        print '-----------------------------------------------------------------------------------------'
+        print 'Variables                                     parameters    std_err     t_stat    p_value'
+        print '-----------------------------------------------------------------------------------------'
+        for k in range(0, len(namesExpVarsClassSpec[s])):
+            print '%-45s %10.4f %10.4f %10.4f %10.4f' %(namesExpVarsClassSpec[s][k], paramClassSpec[s][k], 
+                    stdErrClassSpec[s][k], paramClassSpec[s][k]/stdErrClassSpec[s][k], scipy.stats.norm.sf(abs(paramClassSpec[s][k]/stdErrClassSpec[s][k]))*2 )
+        print '-----------------------------------------------------------------------------------------'
 
         
     print
     print 'Class Membership Model:'
-    print '------------------------------------------------------------------------------'
-    print 'Parameter                                            Est         SE     t-stat'
-    print '------------------------------------------------------------------------------'
+    print '-----------------------------------------------------------------------------------------'
+    print 'Variables                                     parameters    std_err     t_stat    p_value'
+    print '-----------------------------------------------------------------------------------------'
     cParam = 0
-    for k in range(0, len(namesExpVarsIndMod)):
-        for s in range(1, nIndMods):
-            varName = namesExpVarsIndMod[k] + ' (Class %d)' %(s + 1)
-            print '%-45s %10.4f %10.4f %10.4f' %(varName, paramIndMod[cParam], 
-                    stdErrIndMod[cParam], paramIndMod[cParam]/stdErrIndMod[cParam])
+    for k in range(0, len(namesExpVarsClassMem)):
+        for s in range(1, nClasses):
+            varName = namesExpVarsClassMem[k] + ' (Class %d)' %(s + 1)
+            print '%-45s %10.4f %10.4f %10.4f %10.4f' %(varName, paramClassMem[cParam], 
+                    stdErrClassMem[cParam], paramClassMem[cParam]/stdErrClassMem[cParam], scipy.stats.norm.sf(abs(paramClassMem[cParam]/stdErrClassMem[cParam]))*2)
             cParam += 1
-    print '------------------------------------------------------------------------------'
+    print '-----------------------------------------------------------------------------------------'
 
-    timeElapsed = datetime.now() - startTime
-    timeElapsed = (timeElapsed.days * 24.0 * 60.0) + (timeElapsed.seconds/60.0)
-    print '\nEstimation time: %.2f minutes\n' %timeElapsed
-    print 'Log-likelihood function at convergence for estimation sample: %.2f' %llEstimation
+    
 
 
 def processData(inds, indID, nClasses, expVarsClassMem, availIndClasses, 
@@ -733,6 +792,13 @@ def emAlgo(outputFilePath, outputFileName, outputFile, nClasses,
     indWeights : 1D numpy array of size nDms.
         Each element accounts for the associated weight for each individual in the data file
         to cater for the choice based sampling scheme.
+    paramClassMem : 1D numpy array of size nVars x ( nClasses - 1 ).
+        Entails parameters of the class memebrship model, excluding those of the first class.
+        It treats the first class as the base class and hence no parameters are estimated
+        for this class.
+    paramClassSpec : List of size nClasses.
+        The jth element is a 1D numpy array containing the parameter estimates associated with 
+        the explanatory variables entering the class-specific utilities for the jth latent class.
         
     Returns
     -------
@@ -750,9 +816,6 @@ def emAlgo(outputFilePath, outputFileName, outputFile, nClasses,
             nClasses, expVarsClassMem[:, ], availIndClasses, 
             obsID, altID,
             choice, availAlts) 
-    
-#     for s in range(0, nClasses):
-#        paramClassSpec.append(-np.random.rand(expVarsClassSpec[s].shape[0])/10)
 
     print 'Initializing EM Algorithm...\n'
     outputFile.write('Initializing EM Algorithm...\n\n')
@@ -785,21 +848,28 @@ def emAlgo(outputFilePath, outputFileName, outputFile, nClasses,
         llOld = llNew
         iterCounter += 1
 
-    # Calculate standard errors
-    stdErrIndMod = calStdErrClassMem(paramClassMem, expVarsClassMem, indClassAv,
+    # Calculate standard errors for the class membership and class specific choice models
+    stdErrClassMem = calStdErrClassMem(paramClassMem, expVarsClassMem, indClassAv,
                                      weights.reshape((nClasses * nInds, 1), order = 'F'))
-    
-    stdErr = []
+                                     
+    stdErrClassSpec = []
     for s in range(0, nClasses):
-        stdErr.append(calStdErrWtLogitPanel(paramClassSpec[s], expVarsClassSpec[s], altAv[s], 
+        stdErrClassSpec.append(calStdErrWtLogitPanel(paramClassSpec[s], expVarsClassSpec[s], altAv[s], 
                     weights[s, :], altAv[s] * obsAv * weights[s, :][:, None], 
                     altChosen, obsAv, choice))
 
-    # Print results
-                    
-    displayOutput(outputFile, startTime, llNew, nClasses, 
-            namesExpVarsClassMem, paramClassMem,stdErrIndMod,
-            namesExpVarsClassSpec, paramClassSpec, stdErr) 
+    # calculating the null log-likelihod
+    paramClassMemNull = np.zeros(expVarsClassMem.shape[0])
+    paramClassSpecNull = []    
+    for s in range(0, nClasses):
+        paramClassSpecNull.append(np.zeros(expVarsClassSpec[s].shape[0]))    
+    weightsNull, llNull = calProb(nClasses, nInds, paramClassMemNull, expVarsClassMem, indClassAv,
+                paramClassSpecNull, expVarsClassSpec, altAv, altChosen, obsAv,indWeights)    
+    
+    # display model fit results and parameter estimation results               
+    displayOutput(outputFile, startTime, llNew,llNull, nClasses, 
+            namesExpVarsClassMem, paramClassMem,stdErrClassMem,
+            namesExpVarsClassSpec, paramClassSpec, stdErrClassSpec,obsID) 
 
     # Write parameters to file and store them in an outputfile for the user
 
@@ -807,7 +877,7 @@ def emAlgo(outputFilePath, outputFileName, outputFile, nClasses,
         for s in range(0, nClasses):
             np.savetxt(f, paramClassSpec[s][None, :], delimiter = ',')
         np.savetxt(f, paramClassMem[None, :], delimiter = ',')
-                
+
 
 
 def lccm_fit(data, 
@@ -820,10 +890,12 @@ def lccm_fit(data,
              class_membership_labels, 
              class_specific_specs,
              class_specific_labels, 
-             indWeights,
+             indWeights = None,
              avail_classes = None,
-             avail_alts = None, 
-             outputFilePath = 'output/', 
+             avail_alts = None,
+             paramClassMem = None,
+             paramClassSpec = None,
+             outputFilePath = '', 
              outputFileName = 'ModelResults'):
     """
     Takes a PyLogit-style dataframe and dict-based specifications, converts them into
@@ -831,37 +903,39 @@ def lccm_fit(data,
     
     Parameters
     ----------
-    data : pandas.DataFrame
-    	Labeled data in long format (i.e., each alternative in a choice scenario is in a 
-    	separate row).
-    ind_id_col : str
-    	Name of column identifying the decision maker for each row of data.
-    obs_id_col : str
-    	Name of column identifying the observation (choice scenario).
-    alt_id_col : str
-    	Name of column identifying the alternative represented.
-    choice_col : str
-    	Name of column identifying whether the alternative represented by a row was 
-    	chosen during the corresponding observation. 
-    n_classes : int
-    	Number of latent classes to be estimated by the model. 
+    data : pandas.DataFrame.
+        Labeled data in long format (i.e., each alternative in a choice scenario is in a 
+        separate row).
+    ind_id_col : String.
+        	Name of column identifying the decision maker for each row of data.
+    obs_id_col : String.
+        	Name of column identifying the observation (choice scenario).
+    alt_id_col : String.
+        	Name of column identifying the alternative represented.
+    choice_col : String.
+        	Name of column identifying whether the alternative represented by a row was 
+         chosen during the corresponding observation. 
+    n_classes : Integer.
+        	Number of latent classes to be estimated by the model. 
     class_membership_spec : list of strings
-    	List of column names to be used as explanatory variables for the class membership 
-    	model. If the first element is 'intercept', an intercept will be generated (and 
-    	any column of data with that name will be lost). 
+        	List of column names to be used as explanatory variables for the class membership 
+         model. If the first element is 'intercept', an intercept will be generated (and 
+         any column of data with that name will be lost). 
     class_membership_labels : list of strings, of same length as class_membership_spec
-    	Labels for the explanatory variables in the class membership model.
+        	Labels for the explanatory variables in the class membership model.
     class_specific_spec : list of OrderedDicts, of length n_classes
-    	Each OrderedDict represents the specification for one class-specific choice model.
-    	Specifications should have keys representing the column names to be used as 
-    	explanatory variables, and values that are lists of the applicable alternative
-    	id's. Specs will be passed to pylogit.choice_tools.create_design_matrix().
-    class_specific_labels : list of list of strings
-    	Labels for the explanatory variables in the class-specific choice models. THIS 
-    	FUNCTION WILL NEED TO BE ADAPTED TO ACCEPT PYLOGIT-STYLE ORDEREDDICT LABELS.
-    indWeights : list, as specified by emAlgo()
-    	WE SHOULD PROBABLY CHANGE THIS SO THAT USERS SPECIFY WEIGHTS IN THE DATAFRAME,
-    	AND THIS PARAMETER IS AN OPTIONAL COLUMN NAME.
+        	Each OrderedDict represents the specification for one class-specific choice model.
+         Specifications should have keys representing the column names to be used as 
+         explanatory variables, and values that are lists of the applicable alternative
+         id's. Specs will be passed to pylogit.choice_tools.create_design_matrix().
+    class_specific_labels : list of OrderedDicts, of length n_classes
+         Each OrderedDict entails the names of explanatory variables for one class-
+         specific choice model. Labels should have keys representing the general name
+         of the explnatory variable used, and values that are lists of the names of 
+         the variable associated with the respective alternative as specified by the analyst.    	
+    indWeights : 1D numpy array of size nDms.
+        Each element accounts for the associated weight for each individual in the data file
+        to cater for the choice based sampling scheme.
     avail_classes : 2D array of size (n_classes x n_rows), optional
     	Which classes are available to which decision-maker? The (i,j)th element equals 1
     	if the ith latent class is available to the decision-maker corresponding to the 
@@ -872,6 +946,13 @@ def lccm_fit(data,
     	element is an array containing identifiers for the alternatives that are available
     	to decision-makers belonging to the sth latent class. If not specified, all
     	alternatives are available to members of all latent classes.
+    paramClassMem : 1D numpy array of size nVars x ( nClasses - 1 ).
+        Entails parameters of the class memebrship model, excluding those of the first class.
+        It treats the first class as the base class and hence no parameters are estimated
+        for this class.
+    paramClassSpec : List of size nClasses.
+        The jth element is a 1D numpy array containing the parameter estimates associated with 
+        the explanatory variables entering the class-specific utilities for the jth latent class.
     outputFilePath : str, optional
     	Relative file path for output. If not specified, defaults to 'output/'
     outputFileName : str, optional
@@ -899,12 +980,14 @@ def lccm_fit(data,
     nClasses = n_classes
     
     # AVAILABLE CLASSES: Which latent classes are available to which decision-maker? 
-    # 2D array of size (nClasses x nRows) where 1=available, 0=not
+    # 2D array of size (nClasses x nRows) where 1=available i.e. latent class is 
+    #available to thee decision-maker in that row of that data and 0 otherwise
     
     if avail_classes is None:
         availIndClasses = np.ones((nClasses, data.shape[0]), dtype=np.int)
     
-    # CLASS MEMBERSHIP MODEL: Generate design matrix, including intercept if needed. 
+    # CLASS MEMBERSHIP MODEL: Generate design matrix, including intercept for the remaining 
+    # classes besides the first class i.e. the base class. 
     # We're not using the function from PyLogit for two reasons: (1) we don't have a 
     # choice column to provide, and (2) the convention in LCCM is for all parameters to be 
     # included for each class, so we won't have any of the special cases that the ordered
@@ -918,11 +1001,13 @@ def lccm_fit(data,
     # AVAILABLE ALTERNATIVES: Which choice alternatives are available to each latent
     # class of decision-makers? List of size nClasses, where each element is a list of
     # identifiers of the alternatives available to members of that class.
+    # Default case is to make all alternative available to all decision-makers.
     
     if avail_alts is None:
     	availAlts = [np.unique(altID) for s in class_specific_specs]    
     
-    # CLASS-SPECIFIC MODELS: Use PyLogit to generate design matrices
+    # CLASS-SPECIFIC MODELS: Use PyLogit to generate design matrices of explanatory variables
+    # for each of the class specific choice models, inluding an intercept as specified by the user.
     
     design_matrices = [pylogit.choice_tools.create_design_matrix(data, spec, alt_id_col)[0] 
     						for spec in class_specific_specs]
@@ -934,11 +1019,33 @@ def lccm_fit(data,
     # WILL NOT work until we update the LCCM code to handle that. 
     
     # starting values for the parameters of the class membership and class specific models
-    paramClassMem = np.zeros(expVarsClassMem.shape[0]*(nClasses-1))
-    paramClassSpec = []
-    paramClassSpec.append(np.array([-1,0,0]))    
-    paramClassSpec.append(np.array([-2,0,0,0]))
-    paramClassSpec.append(np.array([-15]))
+    # making the starting value of the class membership and class specfic choice models random
+    # in case the user does not specify those starting values.
+    if paramClassMem is None:    
+        paramClassMem = np.zeros(expVarsClassMem.shape[0]*(nClasses-1))
+    if paramClassSpec is None:
+        paramClassSpec = []
+        for s in range(0, nClasses):
+            paramClassSpec.append(-np.random.rand(expVarsClassSpec[s].shape[0])/10)
+    
+    # weights to account for choice-based sampling
+    # By default the weights will be assumed to be equal to one for all individuals unless the user
+    # specifies the weights
+    # indWeights is 1D numpy array of size nInds accounting for the weight for each individual in the sample
+    # as given by the user
+    if indWeights is None:    
+        indWeights = np.ones((np.unique(indID).shape[0])) 
+    
+    # defining the names of the explanatory variables for class specific model
+    # getting the requried list elements that comprise string of names of
+    # explanatory variables to be used in displaying parameter estimates in the output tables.
+    namesExpVarsClassSpec = []
+    for i in range(0, len(class_specific_labels)):
+        name_iterator=[]
+        for key, value in class_specific_labels[i].iteritems() :
+            name_iterator.append(value)
+        namesExpVarsClassSpec.append(name_iterator)
+        
     
     # Invoke emAlgo()
     emAlgo(outputFilePath = outputFilePath, 
@@ -954,14 +1061,13 @@ def lccm_fit(data,
            choice = choice, 
            availAlts = availAlts, 
            expVarsClassSpec = expVarsClassSpec, 
-           namesExpVarsClassSpec = class_specific_labels, 
+           namesExpVarsClassSpec = namesExpVarsClassSpec, 
            indWeights = indWeights,
            paramClassMem = paramClassMem,
            paramClassSpec = paramClassSpec)
     
     outputFile.close()
     return
-    
     
     
     
