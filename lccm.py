@@ -836,8 +836,8 @@ def emAlgo(outputFilePath, outputFileName, outputFile, nClasses,
         cWeights = np.tile(indWeights[None, :], (nClasses, 1))
         paramClassMem = minimize(wtClassMem, paramClassMem, args = (expVarsClassMem, indClassAv, 
                 weights.reshape((nClasses * nInds, 1), order = 'F'), cWeights.reshape((nClasses * nInds, 1), order = 'F')), 
-                method = 'BFGS', jac = True, tol = llTol, options = {'gtol': grTol})['x']        
-        
+                method = 'BFGS', jac = True, tol = llTol, options = {'gtol': grTol})['x']  
+
         for s in range(0, nClasses):
             cWeights = np.multiply(weights[s, :], indWeights)
             paramClassSpec[s] = minimize(wtLogitPanel, paramClassSpec[s], args = (expVarsClassSpec[s], altAv[s], 
@@ -866,7 +866,7 @@ def emAlgo(outputFilePath, outputFileName, outputFile, nClasses,
     weightsNull, llNull = calProb(nClasses, nInds, paramClassMemNull, expVarsClassMem, indClassAv,
                 paramClassSpecNull, expVarsClassSpec, altAv, altChosen, obsAv,indWeights)    
     
-    # display model fit results and parameter estimation results               
+    # display model fit results and parameter estimation results            
     displayOutput(outputFile, startTime, llNew,llNull, nClasses, 
             namesExpVarsClassMem, paramClassMem,stdErrClassMem,
             namesExpVarsClassSpec, paramClassSpec, stdErrClassSpec,obsID) 
@@ -1004,7 +1004,9 @@ def lccm_fit(data,
     # Default case is to make all alternative available to all decision-makers.
     
     if avail_alts is None:
-    	availAlts = [np.unique(altID) for s in class_specific_specs]    
+    	availAlts = [np.unique(altID) for s in class_specific_specs]  
+    else:
+        availAlts = avail_alts
     
     # CLASS-SPECIFIC MODELS: Use PyLogit to generate design matrices of explanatory variables
     # for each of the class specific choice models, inluding an intercept as specified by the user.
@@ -1043,10 +1045,12 @@ def lccm_fit(data,
     for i in range(0, len(class_specific_labels)):
         name_iterator=[]
         for key, value in class_specific_labels[i].iteritems() :
-            name_iterator.append(value)
+            if type(value) is list:
+                name_iterator += value
+            else:
+                name_iterator.append(value)
         namesExpVarsClassSpec.append(name_iterator)
-        
-    
+
     # Invoke emAlgo()
     emAlgo(outputFilePath = outputFilePath, 
            outputFileName = outputFileName, 

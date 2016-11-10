@@ -7,27 +7,23 @@ from collections import OrderedDict
 
 # Load the data file
 inputFilePath = 'C:/Users/Feras/Desktop/LCCM Package/'
-inputFileName = 'TrainingData.txt'
+inputFileName = 'Santiago.csv'
 
 print '\nReading %s' %inputFileName 
-data = np.loadtxt(open(inputFilePath + inputFileName, 'rb'), delimiter='\t')
+df = pd.read_csv(open(inputFilePath + inputFileName, 'rb'))
+df = df.iloc[:,0:13]
 
-# Convert to a pandas dataframe
-df = pd.DataFrame(data, columns=['indID', 'altID', 'obsID', 'choice', 'zipInd',
-        'hhIncome', 'male', 'adopters', 'stationDummy', 'googleDummy', 'accessibility'])
+# defining the column names of dataframe
+df.columns=['indID', 'obsID', 'choice', 'altID', 'waveID', 'traveltime','AccEgressTime',
+                                 'waitTime', 'Num Transfers', 'travelCost', 'workHours', 'income','male']
 
-# Clean up and scale variables as needed, create interactions
-df['hhIncome'] = df.hhIncome / 1000
-
-df['v_accessibility'] =  df.accessibility
-df['v_adopters'] =  df.adopters
-df['v_google_dummy'] = df.googleDummy
 
 
 # Class membership model 
-n_classes = 3
+df['income'] = df.income / 1000
+n_classes = 2
 
-class_membership_spec = ['intercept', 'hhIncome', 'male']
+class_membership_spec = ['intercept', 'income', 'male']
 class_membership_labels = ['Class-specific constant', 'Monthly Income (1000s $)', 'male' ]
 
 
@@ -35,41 +31,25 @@ class_membership_labels = ['Class-specific constant', 'Monthly Income (1000s $)'
 # Class-specific choice model
 class_specific_specs = [
 	OrderedDict([
-		('intercept', [1]), 
-		('v_accessibility', [1]), 
-		('v_google_dummy', [1]) ]),
+		('intercept', [2,3,4,5,6,7]), 
+		('traveltime', [[1],[2,3,4,5,6,7]]), 
+		('travelCost', [[2,3,7],[1,4,5,6]]) 
+   ]),
 	OrderedDict([
-		('intercept', [1]),
-		('v_accessibility', [1]),
-		('v_adopters', [1]),
-		('v_google_dummy', [1]) ]),
-	OrderedDict([
-		('intercept', [1]) ])
+		('intercept', [2,3,4,5,6,7]),     
+		('traveltime', [[1,2,3,4,5,6,7]]), 
+		('travelCost', [[1,2,3,4,5,6,7]]) 
+   ])
 ]
 
 
 class_specific_labels = [
-	OrderedDict([('ASC', 'ASC (Adopt)'),('Accessibility','Accessibility Adopt'), ('Google Employee', 'Google Employee Adopt')]),
-	OrderedDict([('ASC', 'ASC (Adopt)'), ('Accessibility','Accessibility Adopt'), ('Cumulative Adopters (t-1)','Cumulative Adopters (t-1) Adopt'), ('Google Employee','Google Employee Adopt')]),
-	OrderedDict([('ASC','ASC (CarShare)')])
+	OrderedDict([('ASC', ['ASC(Metro)', 'ASC(Bus)', 'ASC(Walk)', 'ASC(Bike)' ,'ASC(AutoMetro)', 'ASC(BusMetro)']),
+               ('Travel Time',['Travel Time Car','Travel Time all but car']), ('Travel Cost', ['Travel Cost bus and metro','Travel cost all but bus and metro'])]),
+	OrderedDict([('ASC', ['ASC(Metro)', 'ASC(Bus)', 'ASC(Walk)', 'ASC(Bike)', 'ASC(AutoMetro)']),
+               ('Travel Time',['Travel Time']), ('Travel Cost', ['Travel Cost'])])
 ]
 
-
-# Accounting for weights - choice-based sampling (Moshe & Lerman)
-# Weighted Exogenous Sample Maximum Likelihood (WESML)
-weightAdopters = 0.0003853/0.404
-weightNonAdopters = 0.9996147/0.596    
-indWeightsA = np.repeat(weightAdopters, 300)
-indWeightsNA = np.repeat(weightNonAdopters,201 )        
-indWeights = np.hstack((indWeightsA,indWeightsNA))  
-
-# parameter estimates starting value  
-paramClassMem = np.zeros(len(class_membership_spec)*(n_classes -1))
-paramClassSpec = []
-for s in range(0, n_classes):
-    paramClassSpec.append(np.array([-1,0,0]))    
-    paramClassSpec.append(np.array([-2,0,0,0]))
-    paramClassSpec.append(np.array([-15]))
 
 # Fit the model
 
@@ -85,10 +65,10 @@ with warnings.catch_warnings():
                   class_membership_spec = class_membership_spec,
                   class_membership_labels = class_membership_labels,
                   class_specific_specs = class_specific_specs,
-                  class_specific_labels = class_specific_labels, 
-                  indWeights = indWeights,
-                  outputFilePath = inputFilePath,
-                  paramClassMem = paramClassMem,
-                  paramClassSpec = paramClassSpec)
+                  class_specific_labels = class_specific_labels,
+                  #indWeights = indWeights,
+                  outputFilePath = inputFilePath)
+                  #paramClassMem = paramClassMem)
+                  #paramClassSpec = paramClassSpec)
 
 
