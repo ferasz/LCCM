@@ -46,7 +46,7 @@ class_specific_specs = [
 class_specific_labels = [
 	OrderedDict([('ASC', ['ASC(Metro)', 'ASC(Bus)', 'ASC(Walk)', 'ASC(Bike)' ,'ASC(AutoMetro)', 'ASC(BusMetro)']),
                ('Travel Time',['Travel Time Car','Travel Time all but car']), ('Travel Cost', ['Travel Cost bus and metro','Travel cost all but bus and metro'])]),
-	OrderedDict([('ASC', ['ASC(Metro)', 'ASC(Bus)', 'ASC(Walk)', 'ASC(Bike)', 'ASC(AutoMetro)']),
+	OrderedDict([('ASC', ['ASC(Metro)', 'ASC(Bus)', 'ASC(Walk)', 'ASC(Bike)', 'ASC(AutoMetro)', 'ASC(BusMetro)']),
                ('Travel Time',['Travel Time']), ('Travel Cost', ['Travel Cost'])])
 ]
 
