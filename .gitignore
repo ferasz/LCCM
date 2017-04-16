@@ -1,0 +1,26 @@
+# Compiled python modules.
+*.pyc
+
+# Setuptools distribution folder.
+/dist/
+./dist
+dist
+
+# Inscrutable cache folder
+.cache
+
+# Python egg metadata, regenerated from source files by setuptools.
+/*.egg-info
+
+# setup.py working directory
+build
+
+# Mac OS binary file
+.DS_Store
+
+# Files produced when tracking statement coverage of code.
+.coverage
+
+# Folder that stores deprecated code.
+deprecated_code
+deprecated_code/
