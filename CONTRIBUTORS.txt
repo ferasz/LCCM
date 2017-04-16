@@ -1,0 +1,7 @@
+This project has been assisted by numerous individuals.
+
+Professor John Canny advised Vij on optimizing the code in terms of making it run 
+much faster using sparse matrices to calculate the required probabilities and gradients.
+
+Professor Paul Waddell provided the financial support to ensure continued progress 
+with this package.
