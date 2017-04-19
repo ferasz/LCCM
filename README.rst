@@ -13,7 +13,7 @@ Main Features
 
 * Accounts for sampling weights in case the data you are working with is choice-based i.e. Weighted Exogenous Sample Maximum Likelihood (WESML) from (Ben-Akiva and Lerman, 1983) to yield consistent estimates
 * Constrains the choice set across latent classes whereby each latent class can have its own subset of alternatives in the respective choice set
-* Constrains the availability of latent classes to all individuals in the sample whereby it might be the case that a certain latent class or set of latent classes may be unavailable to certain decision-makers according to the modeller.
+* Constrains the availability of latent classes to all individuals in the sample whereby it might be the case that a certain latent class or set of latent classes are unavailable to certain decision-makers.
 
 Where to get it
 ===============
