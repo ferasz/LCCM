@@ -12,11 +12,8 @@ Main Features
 * Supports model specifications where the coefficient for a given variable may be generic (same coefficient across all alternatives) or alternative specific (coefficients varying across all alternatives or subsets of alternatives) in each latent class
 
 * Accounts for sampling weights in case the data you are working with is choice-based i.e. Weighted Exogenous Sample Maximum Likelihood (WESML) from (Ben-Akiva and Lerman, 1983) to yield consistent estimates
-* Constrains the choice set across latent classes whereby each latent class can have its own subset of alternatives
-in the respective choice set
-* Constrains the availability of latent classes to all individuals in the sample whereby it might be the case
-that a certain latent class or set of latent classes may be unavailable to certain decision-makers according to the 
-modeller.
+* Constrains the choice set across latent classes whereby each latent class can have its own subset of alternatives in the respective choice set
+* Constrains the availability of latent classes to all individuals in the sample whereby it might be the case that a certain latent class or set of latent classes may be unavailable to certain decision-makers according to the modeller.
 
 Where to get it
 ===============
