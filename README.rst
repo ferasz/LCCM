@@ -29,7 +29,7 @@ Where to get it
 Available from PyPi::
 pip install lccm
 
-https://pypi.python.org/pypi/lccm/0.1.3
+https://pypi.python.org/pypi/lccm/0.1.4
 
 
 For More Information

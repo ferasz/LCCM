@@ -20,11 +20,11 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='lccm',
-
+                
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.1.0',
+    version='0.1.4',
 
     description='Estimation of latent class choice models using Expectation Maximization algorithm',
     long_description=long_description,
@@ -48,7 +48,7 @@ setup(
         'Development Status :: 2 - Pre-Alpha',
 
         # Indicate the environment the project is to be used in
-        'Environment :: Console',
+        #'Environment :: Console',
 
         # Indicate who your project is intended for
         'Intended Audience :: Science/Research',
@@ -66,10 +66,10 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='latent class choice models, Expectation Maximization algorithm, discrete choice modeling, econometrics',
+    keywords='latent class choice models Expectation Maximization algorithm discrete choice modeling econometrics',
     
     # Is your project is safe to be zipped?
-    zip_safe=True,
+    #zip_safe=True,
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
@@ -86,8 +86,7 @@ setup(
     install_requires=['datetime',
                       'pandas >= 0.16.2',
                       'numpy >= 1.10.2',
-                      'scipy >= 0.16.1',
-                      'pylogit >= 0.1.2'],
+                      'scipy >= 0.16.1'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
