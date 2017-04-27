@@ -9,6 +9,7 @@ Main Features
 * Latent Class Choice Models
 
 * Supports datasets where the choice set differs across observations.
+* Allows the analyst to capture correlation across multiple observations for the same respondent (panel data in Revealed Preference contexts and multiple choice tasks in Stated Preference contexts).
 * Supports model specifications where the coefficient for a given variable may be generic (same coefficient across all alternatives) or alternative specific (coefficients varying across all alternatives or subsets of alternatives) in each latent class.
 * Accounts for sampling weights in case the data you are working with is choice-based i.e. Weighted Exogenous Sample Maximum Likelihood (WESML) from (Ben-Akiva and Lerman, 1983) to yield consistent estimates.
 * Constrains the choice set across latent classes whereby each latent class can have its own subset of alternatives in the respective choice set.
