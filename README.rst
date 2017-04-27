@@ -6,7 +6,7 @@ using the Expectation Maximization (EM) algorithm to maximize the likelihood fun
 Main Features
 =============
 
-* Latent Class Choice Models
+Latent Class Choice Models
 
 * Supports datasets where the choice set differs across observations.
 * Allows the analyst to capture correlation across multiple observations for the same respondent (panel data in Revealed Preference contexts and multiple choice tasks in Stated Preference contexts).
